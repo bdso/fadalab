@@ -1,0 +1,16 @@
+version: '3'
+services: 
+  mysql:
+    image: mysql:5.6
+    hostname: mysql
+    restart: always
+    # Persistent data of mysql
+    volumes:
+      - /data/mysql/data:/var/lib/mysql
+      - /data/mysql/config:/etc/mysql
+    container_name: "mysql"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    ports:
+      - "3306:3306"
+        

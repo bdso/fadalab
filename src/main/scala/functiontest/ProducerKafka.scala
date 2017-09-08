@@ -1,0 +1,5 @@
+package functiontest
+
+object ProducerKafka {
+
+}
