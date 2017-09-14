@@ -4,9 +4,9 @@ MAINTAINER leophan<leo.phan0411@gmail.com>
 
 ARG USER_BDS=bdslab
 RUN groupadd -r $USER_BDS && useradd -r -g $USER_BDS $USER_BDS
-WORKDIR /opt/src
-RUN chown $USER_BDS /opt/src
 ENV DIR_HOME=/opt/src
+WORKDIR $DIR_HOME
+
 # Arguments java version.
 ARG JAVA_MAJOR_VERSION=8
 ARG JAVA_UPDATE_VERSION=131
@@ -23,8 +23,6 @@ RUN curl -L -O -H "Cookie: gpw_e24=http://www.oracle.com/; oraclelicense=accept-
   && yum -y install net-tools && yum clean all && rm -rf /tmp/* /var/tmp/* && rm -rf /var/cache/*
 # Check java.
 RUN ["java","-version"]
-
-USER $USER_BDS
 
 # Arguments zookeeper version.
 ARG ZOO_MAJOR=3
@@ -62,26 +60,32 @@ RUN curl -L -O http://mirrors.viethosting.com/apache/kafka/${KAFKA_VERSION}/kafk
 COPY conf.d/kafka $DIR_HOME/conf.d/kafka
 EXPOSE $KAFKA_PORT $KAFKA_JMX_PORT
 
-# # Arguments storm version.
-# ARG STORM_MAJOR=1
-# ARG STORM_UPDATE=0
-# ARG STORM_BUILD=2
-# ARG STORM_VERSION=${STORM_MAJOR}.${STORM_UPDATE}.${STORM_BUILD}
-# ARG STORM_UI_PORT=8080
-# ARG STORM_W0_PORT=6700
-# ARG STORM_W1_PORT=6701
-# ARG STORM_W2_PORT=6702
-# ARG STORM_W3_PORT=6703
-# # Set ENV kafka.
-# ENV STORM_HOME=$DIR_HOME/apache-storm-${STORM_VERSION}
-# ENV PATH $PATH:$STORM_HOME/bin
-# # Install storm.
-# RUN curl -L -O http://mirror.downloadvn.com/apache/storm/apache-storm-${STORM_VERSION}/apache-storm-${STORM_VERSION}.tar.gz \
-#   && tar -xzf apache-storm-${STORM_VERSION}.tar.gz \
-#   && rm -rf apache-storm-${STORM_VERSION}.tar.gz \
-# # Config storm.
+# Arguments spark version.
+# SPARK
+ARG SPARK_MAJOR_VERSION=2
+ARG SPARK_UPDATE_VERSION=1
+ARG SPARK_BUILD_VERSION=1
+ARG SPARK_MASTER_PORT=7070
+ARG SPARK_MASTER_REST_PORT=6066
+ARG SPARK_MASTER_WEBUI_PORT=8080
+ARG SPARK_WORKER_WEBUI_PORT=8081
+ARG SPARK_MASTER_JOB_PORT=4040
+ARG SPARK_VERSION=${SPARK_MAJOR_VERSION}.${SPARK_UPDATE_VERSION}.${SPARK_BUILD_VERSION}
+# Set ENV spark.
+ENV SPARK_HOME $DIR_HOME/spark-${SPARK_VERSION}-bin-hadoop2.7
+ENV PATH $PATH:$SPARK_HOME/bin
+# Install spark.
+#ARG SPARK_ARCHIVE=https://d3kbcqa49mib13.cloudfront.net/spark-2.1.1-bin-hadoop2.7.tgz
+ARG SPARK_ARCHIVE=https://d3kbcqa49mib13.cloudfront.net/spark-${SPARK_VERSION}-bin-hadoop2.7.tgz
+RUN curl -L -O $SPARK_ARCHIVE \
+  && tar -xzf spark-${SPARK_VERSION}-bin-hadoop2.7.tgz \
+  && rm -rf spark-${SPARK_VERSION}-bin-hadoop2.7.tgz
+# Config spark.
+# for High-availability like zoo-keeper's leader election
+# COPY ha.conf $SPARK_HOME/conf
 
-# EXPOSE $STORM_UI_PORT $STORM_W0_PORT $STORM_W1_PORT $STORM_W2_PORT $STORM_W3_PORT
+EXPOSE $SPARK_MASTER_PORT $SPARK_MASTER_REST_PORT \
+  $SPARK_MASTER_WEBUI_PORT $SPARK_WORKER_WEBUI_PORT $SPARK_MASTER_JOB_PORT
 
 # Arguments elasticsearch version.
 ARG ELASTIC_MAJOR=5
@@ -127,5 +131,7 @@ EXPOSE $KIBANA_PORT
 
 COPY script.d $DIR_HOME/script.d
 COPY docker-entrypoint.sh $DIR_HOME
+RUN chown -R $USER_BDS $DIR_HOME
+USER $USER_BDS
 ENTRYPOINT ["/opt/src/docker-entrypoint.sh"]
 # CMD ["/opt/src/docker-entrypoint.sh"]

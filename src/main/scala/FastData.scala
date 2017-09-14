@@ -5,18 +5,20 @@
 
 
 import java.io.File
+import java.time.LocalDateTime
 
 import com.typesafe.config.ConfigFactory
 import function.FunctionStream._
+import function.SetConfig._
 import function._
 import mapping.Object._
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.SparkContext
 import org.apache.spark.streaming._
-import org.apache.spark.streaming.dstream.DStream
-import org.apache.spark.{SparkConf, SparkContext}
-
 
 object FastData {
+
+  val LOG: Logger = Logger.getLogger(this.getClass)
 
   def main(args: Array[String]): Unit = {
 
@@ -24,6 +26,7 @@ object FastData {
     Logger.getLogger("akka").setLevel(Level.OFF)
 
     if (args.length < 1) {
+      LOG.info("*** Start load config ***")
       System.err.println(
         s"""
            |Usage: FastData <config>
@@ -33,37 +36,47 @@ object FastData {
       System.exit(1)
     }
 
-    val loadConfig = new Settings(ConfigFactory.parseFile(new File(args(0))))
+    val loadFileConfig = ConfigFactory.parseFile(new File(args(0)))
+    val loadConfig = new Settings(ConfigFactory.load(loadFileConfig))
 
-    val conf = new SparkConf()
-      .setAppName(loadConfig.setAppName)
-      .setMaster(loadConfig.setMaster)
+    //    val conf: SparkConf = new SparkConf()
+    //      .setAppName(loadConfig.getAppName)
+    //      .setMaster(loadConfig.getMaster)
 
-    conf.set("es.index.auto.create", loadConfig.setIndexAutoCreate)
-    conf.set("es.nodes", loadConfig.setEsNodes)
-    conf.set("es.port", loadConfig.setEsPort)
+    //    setConfig(conf, loadConfig)
+    val conf = updateConfigFromFile(loadFileConfig)
 
     val sc = new SparkContext(conf)
-    val ssc: StreamingContext = new StreamingContext(sc, Seconds(loadConfig.setSlidingInterval))
+    val ssc: StreamingContext = new StreamingContext(sc, Seconds(loadConfig.getSlidingInterval))
 
-    val kafkaConfig = KafkaStreamObj(loadConfig.setTopics, loadConfig.setBrokers, ssc)
-    val dStream: DStream[AppObj] = kafkaDirectStream(kafkaConfig)
+    // Load data from kafka.
+    val kafkaConfig = KafkaStreamObj(loadConfig.getTopics, loadConfig.getBrokers, ssc)
+    val dStreamKafka = kafkaDirectStream(kafkaConfig)
 
-    // Get the lines, split them into words, count the words and print
-    //    val dStream: DStream[ESObj] = lines.map { i =>
-    //      val obj = ESObj(i.toString)
-    //      obj
-    //    }
-
-    val elasticConfig = ElasticStreamObj(loadConfig.setEsIndexName, loadConfig.setEsType, dStream)
+    // Store into elasticsearch.
+    val elasticConfig = ElasticStreamObj(loadConfig.getEsIndexName, loadConfig.getEsType, dStreamKafka)
     storeEsSparkStream(elasticConfig)
-    dStream.print()
+
+    // Calculator msg.
+    val dStream = dStreamKafka.map(x => (x.hostsource, 1L)).reduceByKey(_ + _)
+      .reduceByKeyAndWindow(_ + _, _ - _, Seconds(loadConfig.getWindowSize), Seconds(loadConfig.getSlidingInterval))
+    //    dStream.print()
+
+    //    Store into redis.
+    storeRedisSparkStream(dStream)
+    val dStreamCassandra = dStream.map(x => (LocalDateTime.now.toString, x._1, x._2))
+    dStreamCassandra.print()
+
+    // Store into Cassandra.
+    //    dStreamCassandra.saveToCassandra(loadConfig.getCassandraKeyspace, "ccu", SomeColumns("time", "keys", "counts"))
+
+    //    dStreamCassandra.print()
 
     /**
       * Start the computation.
       **/
 
-    ssc.checkpoint(loadConfig.setCheckpointDir)
+    ssc.checkpoint(loadConfig.getCheckpointDir)
 
     ssc.start() // Start the computation
     ssc.awaitTermination() // Wait for the computation to terminate

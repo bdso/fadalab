@@ -1,0 +1,3 @@
+# publish_address {127.0.0.1:9300}, bound_addresses {0.0.0.0:9300}
+# publish_address {127.0.0.1:9200}, bound_addresses {0.0.0.0:9200}
+network.bind_host: 0.0.0.0

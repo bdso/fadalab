@@ -1,0 +1,23 @@
+version: '2'
+services: 
+  bds_fastdata:
+    container_name: bds_fastdata
+    hostname: localhost
+    image: "leophan/fastdata:0.2.0"
+    ports:
+     - "2181:2181"
+     - "9092:9092"
+     - "9090:9090"
+     - "9200:9200"
+     - "9300:9300"
+     - "5601:5601"
+     - "8080:8080"
+     - "8081:8081"
+     - "7077:7077"
+     - "6066:6066" 
+     - "4040:4040"
+    environment:
+      # KAFKA_ADVERTISED_HOST_NAME: 192.168.99.100
+      KAFKA_PORT: 9092
+      KAFKA_CREATE_TOPICS: "bdslab:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: localhost:2181

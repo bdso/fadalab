@@ -18,8 +18,11 @@ libraryDependencies ++= {
 
   val sparkVersion = "2.1.1"
   val elasticVersion = "5.4.1"
+  val jedisVersion = "2.9.0"
   val typeSafeVersion = "1.3.1"
-  val typeSafePlayVersion = "2.6.3"
+  val liftWebVersion = "3.1.0"
+  val cassandraConVersion = "2.0.5"
+
 
   Seq(
 
@@ -43,12 +46,15 @@ libraryDependencies ++= {
     "org.apache.spark" % "spark-streaming-kafka-0-8_2.11" % sparkVersion,
     "org.elasticsearch" % "elasticsearch-spark-20_2.11" % elasticVersion,
 
+    "redis.clients" % "jedis" % jedisVersion,
+    "com.datastax.spark" % "spark-cassandra-connector_2.11" % cassandraConVersion,
+
     /**
       * Load Config files.
       */
 
     "com.typesafe" % "config" % typeSafeVersion,
-    "com.typesafe.play" % "play-json_2.11" % typeSafePlayVersion
+    "net.liftweb" % "lift-json_2.11" % liftWebVersion
 
     /**
       *

@@ -1,5 +1,0 @@
-package functiontest
-
-object ConsumerKafka {
-
-}

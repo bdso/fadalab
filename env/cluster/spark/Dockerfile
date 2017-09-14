@@ -29,16 +29,16 @@ USER $USER_BDS
 # SPARK
 ARG SPARK_MAJOR_VERSION=2
 ARG SPARK_UPDATE_VERSION=1
-ARG SPARK_BUILD_VERSION=0
+ARG SPARK_BUILD_VERSION=1
 ARG SPARK_VERSION=${SPARK_MAJOR_VERSION}.${SPARK_UPDATE_VERSION}.${SPARK_BUILD_VERSION}
 
-#ARG SPARK_ARCHIVE=http://d3kbcqa49mib13.cloudfront.net/spark-2.1.0-bin-hadoop2.7.tgz
-ARG SPARK_ARCHIVE=http://d3kbcqa49mib13.cloudfront.net/spark-${SPARK_VERSION}-bin-hadoop2.7.tgz
+#ARG SPARK_ARCHIVE=https://d3kbcqa49mib13.cloudfront.net/spark-2.1.1-bin-hadoop2.7.tgz
+ARG SPARK_ARCHIVE=https://d3kbcqa49mib13.cloudfront.net/spark-${SPARK_VERSION}-bin-hadoop2.7.tgz
 RUN curl -L -O $SPARK_ARCHIVE \
-  && tar -xzf spark-2.1.0-bin-hadoop2.7.tgz \
-  && rm -rf spark-2.1.0-bin-hadoop2.7.tgz
+  && tar -xzf spark-${SPARK_VERSION}-bin-hadoop2.7.tgz \
+  && rm -rf spark-${SPARK_VERSION}-bin-hadoop2.7.tgz
 
-ENV SPARK_HOME $DIR_HOME/spark-2.1.0-bin-hadoop2.7
+ENV SPARK_HOME $DIR_HOME/spark-${SPARK_VERSION}-bin-hadoop2.7
 ENV PATH $PATH:$SPARK_HOME/bin
 
 # for High-availability like zoo-keeper's leader election
