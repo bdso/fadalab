@@ -1,11 +1,17 @@
 package function
 
-import com.typesafe.config.Config
+import java.io.File
+
+import com.typesafe.config.{Config, ConfigFactory}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkConf
 
 object SetConfig {
+  val LOG: Logger = Logger.getLogger(this.getClass)
 
   def setConfig(conf: SparkConf, loadConfig: Settings) = {
+    conf.setAppName(loadConfig.getAppName)
+    conf.setMaster(loadConfig.getMaster)
     // Opz.
     conf.set("spark.worker.cleanup.enabled", "true")
     // Config for elasticsearch.
@@ -25,6 +31,32 @@ object SetConfig {
       sparkConf.set(key, loadConfig.getString(key))
     }
     sparkConf
+  }
+
+  /**
+    *
+    * @param args
+    * @return
+    */
+  def loadSparkConfig(args: Array[String]): SparkConf = {
+
+    Logger.getLogger("org").setLevel(Level.OFF)
+    Logger.getLogger("akka").setLevel(Level.OFF)
+
+    if (args.length < 1) {
+      LOG.info("*** Start load config ***")
+      LOG.info(
+        s"""
+           |Usage: FastData <config>
+           |  <config> is a config file
+           |
+            """.stripMargin)
+      System.exit(1)
+    }
+
+    val loadFileConfig = ConfigFactory.parseFile(new File(args(0)))
+    updateConfigFromFile(loadFileConfig)
+
   }
 
 }
