@@ -1,5 +1,5 @@
 .idea/
-checkpoint/
+checkpoint/*
 lib_sub/
 project/project/*
 project/target/*

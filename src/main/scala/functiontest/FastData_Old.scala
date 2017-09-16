@@ -1,22 +1,15 @@
+package functiontest
+
 
 /**
   * Created by leo on 3/31/17.
   */
 
-import org.apache.spark._
-import org.apache.spark.streaming._
-import org.apache.spark.streaming.StreamingContext._
-import org.elasticsearch.spark.streaming._
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
-import org.apache.spark.rdd.RDD
-import org.apache.spark.streaming.StreamingContext
-import org.apache.spark.streaming.StreamingContext._
-import org.apache.spark.streaming.dstream.{DStream, InputDStream, ReceiverInputDStream}
+import org.apache.spark.{SparkContext, _}
+import org.apache.spark.streaming.{StreamingContext, _}
+import org.apache.spark.streaming.dstream.ReceiverInputDStream
 import org.elasticsearch.spark.streaming._
-
-import scala.collection.mutable
 
 //Logger.getLogger(classOf[RackResolver]).getLevel
 

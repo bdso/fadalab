@@ -2,8 +2,6 @@ package function
 
 import java.time.LocalDateTime
 
-import com.datastax.spark.connector._
-import com.datastax.spark.connector.streaming._
 import function.redis.RedisClient
 import kafka.serializer.StringDecoder
 import mapping.Object._
@@ -32,18 +30,26 @@ object FunctionStream {
     val kafkaConfig = KafkaStreamObj(loadConfig.getTopics, loadConfig.getBrokers, ssc)
     val dStreamKafka = kafkaDirectStream(kafkaConfig)
 
+    dStreamKafka.foreachRDD { rdd =>
+      rdd.foreachPartition { partitionOfRecords =>
+        //        val connection = createNewConnection()
+        //        partitionOfRecords.foreach(record => connection.send(record))
+        //        connection.close()
+      }
+    }
+
     // Calculator msg.
-    val dStream = dStreamKafka.map(x => (x.hostsource, 1L)).reduceByKey(_ + _)
-      .reduceByKeyAndWindow(_ + _, _ - _, Seconds(loadConfig.getWindowSize), Seconds(loadConfig.getSlidingInterval))
-    dStream.print()
+    //    val dStream = dStreamKafka.map(x => (x.click_id, 1L)).reduceByKey(_ + _)
+    //      .reduceByKeyAndWindow(_ + _, _ - _, Seconds(loadConfig.getWindowSize), Seconds(loadConfig.getSlidingInterval))
+    //    dStream.print()
 
     //    Store into redis.
-    storeRedisSparkStream(dStream)
-    val dStreamCassandra = dStream.map(x => (LocalDateTime.now.toString, x._1, x._2))
-    dStreamCassandra.print()
+    //    storeRedisSparkStream(dStream)
+    //    val dStreamCassandra = dStream.map(x => (LocalDateTime.now.toString, x._1, x._2))
+    //    dStreamCassandra.print()
 
     // Store into Cassandra.
-    dStreamCassandra.saveToCassandra(loadConfig.getCassandraKeyspace, "ccu", SomeColumns("time", "keys", "counts"))
+    //    dStreamCassandra.saveToCassandra(loadConfig.getCassandraKeyspace, "ccu", SomeColumns("time", "keys", "counts"))
     //    dStreamCassandra.print()
 
     /**
@@ -121,7 +127,7 @@ object FunctionStream {
     val kafkaParams: Map[String, String] = Map[String, String]("metadata.broker.list" -> kafkaConfig.broker)
     val messages: InputDStream[(String, String)] = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](
       kafkaConfig.scc, kafkaParams, topicsSet)
-    val dataOut = messages.map(msg => parse(msg._2).extract[AppObjOver])
+    val dataOut = messages.map(msg => parse(msg._2).extract[ObjReceive])
     dataOut
   }
 

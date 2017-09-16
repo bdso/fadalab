@@ -1,14 +1,13 @@
 package functiontest
 
 import java.io.File
-import java.time.LocalDate
 import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
 import function.Settings
 import kafka.javaapi.producer.Producer
 import kafka.producer.{KeyedMessage, ProducerConfig}
-import mapping.Object.AppObjOver
+import mapping.Object.ObjReceive
 import net.liftweb.json.Serialization.write
 import net.liftweb.json._
 import org.apache.log4j.{Level, Logger}
@@ -46,23 +45,50 @@ object ProducerKafka {
     val kafkaConfig: ProducerConfig = new ProducerConfig(props)
     val producer: Producer[String, String] = new Producer[String, String](kafkaConfig)
 
-    //    val msgObj = new AppObj(LocalDate.now.toString, "ngx-lc", LocalDate.now.toString, "docker_cm_01", "db_cm_01", "10.10.10.14")
-    val msgObj = new AppObjOver("2017-09-09T01:59:14.633Z",
-      "ngx_lc",
-      LocalDate.now.toString,
-      "docker-node-4",
-      "hd1-ubs_prod",
-      "10.10.0.91",
-      "-",
-      "09/Sep/2017:01:59:14 +0000",
-      "200",
-      "GET",
-      "/health_check",
-      "16",
-      "\"-\"",
-      "\"-\"",
-      "\"-\"",
-      "\"-\"", 1, 2, 3, 4, 5, 6, 7, 8)
+    val msgObj = new ObjReceive(
+      "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
+      "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
+      "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
+      "2017-09-16T08:58:31.091Z",
+      "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
+      "8.8.8.8",
+      "11.22.33.44",
+      "192.168.1.10",
+      "http://www.kogi.io",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
+      "Viettel Corporation",
+      "Vietnam",
+      "Ho Chi Minh City",
+      "en-us",
+      "MacOSX 10.12",
+      "Safari",
+      "-7",
+      "1440px x 900px",
+      "Al Bayan, Al Nile",
+      "",
+      "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
+      "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
+      "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
+      "SDemo",
+      "CDemo",
+      "MDemo",
+      "TDemo",
+      "192.168.1.0/24",
+      "",
+      "sonpa",
+      "2017-09-16T08:58:31.091Z",
+      "11.22.33.44",
+      "",
+      "2017-09-16T08:58:31.091Z",
+      "11.22.33.44",
+      "http://demopage.io/teo_di_hoc.html",
+      "Title Demo",
+      "20",
+      "10",
+      "Register type demo",
+      "0917083096",
+      "sonpa@kogi.io"
+    )
 
     implicit val formats = DefaultFormats
     val msgJson = write(msgObj)
