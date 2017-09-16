@@ -17,6 +17,11 @@ services:
       KAFKA_PORT: 9092
       KAFKA_CREATE_TOPICS: "bdslab:1:1"
       KAFKA_ZOOKEEPER_CONNECT: localhost:2181
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 2048M
     volumes:
       - /Users/leo/Zimportant/src/fastdata/target/scala-2.11:/conf
     # networks:

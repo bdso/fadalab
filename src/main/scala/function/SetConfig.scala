@@ -3,13 +3,14 @@ package function
 import java.io.File
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.log4j.{Level, Logger}
+import org.apache.log4j.Logger
 import org.apache.spark.SparkConf
 
 object SetConfig {
   val LOG: Logger = Logger.getLogger(this.getClass)
 
-  def setConfig(conf: SparkConf, loadConfig: Settings) = {
+  def setConfig(loadConfig: Settings) = {
+    val conf = new SparkConf()
     conf.setAppName(loadConfig.getAppName)
     conf.setMaster(loadConfig.getMaster)
     // Opz.
@@ -39,9 +40,6 @@ object SetConfig {
     * @return
     */
   def loadSparkConfig(args: Array[String]): SparkConf = {
-
-    Logger.getLogger("org").setLevel(Level.OFF)
-    Logger.getLogger("akka").setLevel(Level.OFF)
 
     if (args.length < 1) {
       LOG.info("*** Start load config ***")

@@ -31,7 +31,8 @@ RUN yum -y install net-tools \
 # Config redis.
 COPY script.d $DIR_HOME/script.d
 COPY conf.d/ $REDIS_HOME/
-
+RUN set -x \
+  && sed -i 's/protected-mode yes/protected-mode no/' /etc/redis.conf
 # RUN chown -r $USER_BDS $DIR_HOME
 EXPOSE $REDIS_PORT
 COPY docker-entrypoint.sh $DIR_HOME

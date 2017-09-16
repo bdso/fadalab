@@ -11,7 +11,6 @@ import function.FunctionStream._
 import function.SetConfig._
 import function._
 import org.apache.log4j.Logger
-import org.apache.spark.SparkConf
 
 object FastData {
 
@@ -22,7 +21,8 @@ object FastData {
     val loadFileConfig = ConfigFactory.parseFile(new File(args(0)))
     val loadConfig = new Settings(ConfigFactory.load(loadFileConfig))
 
-    val conf: SparkConf = loadSparkConfig(args)
+    //    val conf: SparkConf = loadSparkConfig(args)
+    val conf = setConfig(loadConfig)
     application(conf, loadConfig)
 
   }
