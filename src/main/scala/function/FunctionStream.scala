@@ -29,14 +29,15 @@ object FunctionStream {
     // Load data from kafka.
     val kafkaConfig = KafkaStreamObj(loadConfig.getTopics, loadConfig.getBrokers, ssc)
     val dStreamKafka = kafkaDirectStream(kafkaConfig)
+    dStreamKafka.print()
 
-    dStreamKafka.foreachRDD { rdd =>
-      rdd.foreachPartition { partitionOfRecords =>
+//    dStreamKafka.foreachRDD { rdd =>
+//      rdd.foreachPartition { partitionOfRecords =>
         //        val connection = createNewConnection()
         //        partitionOfRecords.foreach(record => connection.send(record))
         //        connection.close()
-      }
-    }
+//      }
+//    }
 
     // Calculator msg.
     //    val dStream = dStreamKafka.map(x => (x.click_id, 1L)).reduceByKey(_ + _)
@@ -76,7 +77,7 @@ object FunctionStream {
     val dStreamKafka = kafkaDirectStream(kafkaConfig)
 
     // Calculator msg.
-    val dStream = dStreamKafka.map(x => (x.hostsource, 1L)).reduceByKey(_ + _)
+    val dStream = dStreamKafka.map(x => (x.user_agent, 1L)).reduceByKey(_ + _)
       .reduceByKeyAndWindow(_ + _, _ - _, Seconds(loadConfig.getWindowSize), Seconds(loadConfig.getSlidingInterval))
     dStream.print()
 
@@ -109,8 +110,8 @@ object FunctionStream {
     val dStreamKafka = kafkaDirectStream(kafkaConfig)
 
     // Store into elasticsearch.
-    val elasticConfig = ElasticStreamObj(loadConfig.getEsIndexName, loadConfig.getEsType, dStreamKafka)
-    storeEsSparkStream(elasticConfig)
+//    val elasticConfig = ElasticStreamObj(loadConfigdConfig.getEsIndexName, loadConfig.getEsType, dStreamKafka)
+//    storeEsSparkStream(elasticConfig)
 
     /**
       * Start the computation.
