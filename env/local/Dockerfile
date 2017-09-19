@@ -114,6 +114,25 @@ RUN set -x \
   && sed -i 's/protected-mode yes/protected-mode no/' /etc/redis.conf
 EXPOSE $REDIS_PORT
 
+# Arguments kafka version.
+ARG CASSANDRA_MAJOR=3
+ARG CASSANDRA_UPDATE=11
+ARG CASSANDRA_BUILD=0
+ARG CASSANDRA_PORT=9042
+ARG CASSANDRA_VERSION=${CASSANDRA_MAJOR}.${CASSANDRA_UPDATE}.${CASSANDRA_BUILD}
+# Set ENV kafka.
+ENV CASSANDRA_HOME=$DIR_HOME/apache-cassandra-${CASSANDRA_VERSION}
+ENV PATH $PATH:$CASSANDRA_HOME/bin
+# Install kafka.
+
+# RUN curl -L -O http://mirrors.viethosting.com/apache/cassandra/3.11.0/apache-cassandra-3.11.0-bin.tar.gz
+RUN curl -L -O http://mirrors.viethosting.com/apache/cassandra/3.11.0/apache-cassandra-${CASSANDRA_VERSION}-bin.tar.gz \
+  && tar -xzf apache-cassandra-${CASSANDRA_VERSION}-bin.tar.gz \
+  && rm -rf apache-cassandra-${CASSANDRA_VERSION}-bin.tar.gz
+# Config kafka.
+# COPY conf.d/ $DIR_HOME/conf.d/kafka
+EXPOSE $CASSANDRA_PORT 7000
+
 COPY script.d $DIR_HOME/script.d
 COPY docker-entrypoint.sh $DIR_HOME
 RUN chown -R $USER_BDS $DIR_HOME && chmod 755 /etc/redis.conf

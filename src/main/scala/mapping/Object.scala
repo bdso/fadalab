@@ -1,5 +1,7 @@
 package mapping
 
+import java.util.UUID
+
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.dstream.DStream
 
@@ -80,20 +82,38 @@ object Object {
                         utm_medium: String,
                         utm_term: String,
                         network: String,
-                        future_params: String,
-                        username: String,
-                        login_time: String,
-                        login_ip: String,
-                        login_type: String,
-                        register_time: String,
-                        register_ip: String,
-                        page_url: String,
-                        page_title: String,
-                        time_on_site: String,
-                        page_load_time: String,
-                        register_type: String,
-                        phone: String,
-                        email: String)
+                        future_params: String)
+
+  case class Click(id: String,
+                   click_id: String,
+                   product_id: String,
+                   timestamp: String,
+                   link_id: String,
+                   dns_ip: String,
+                   public_ip: String,
+                   private_ip: String,
+                   referrer: String,
+                   user_agent: String,
+                   isp: String,
+                   country: String,
+                   city: String,
+                   language: String,
+                   os: String,
+                   browser: String,
+                   time_zone: String,
+                   screen_size: String,
+                   fonts: String,
+                   http_params: String,
+                   campaign_id: String,
+                   channel_id: String,
+                   zone_id: String,
+                   utm_source: String,
+                   utm_campaign: String,
+                   utm_medium: String,
+                   utm_term: String,
+                   network: String,
+                   future_params: String,
+                   fp_id: UUID)
 
   case class Visitor(id: String,
                      click_id: String,

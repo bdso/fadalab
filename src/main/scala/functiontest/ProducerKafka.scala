@@ -1,7 +1,7 @@
 package functiontest
 
 import java.io.File
-import java.util.Properties
+import java.util.{Properties, UUID}
 
 import com.typesafe.config.ConfigFactory
 import function.Settings
@@ -46,15 +46,15 @@ object ProducerKafka {
     val producer: Producer[String, String] = new Producer[String, String](kafkaConfig)
 
     val msgObj = new ObjReceive(
+      UUID.randomUUID().toString(),
       "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
       "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
-      "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
-      "2017-09-16T08:58:31.091Z",
+      "2017-01-10",
       "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
       "8.8.8.8",
-      "11.22.33.44",
+      "10.20.30.40",
       "192.168.1.10",
-      "http://www.kogi.io",
+      "http://abc.kogi.io",
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
       "Viettel Corporation",
       "Vietnam",
@@ -74,24 +74,12 @@ object ProducerKafka {
       "MDemo",
       "TDemo",
       "192.168.1.0/24",
-      "",
-      "sonpa",
-      "2017-09-16T08:58:31.091Z",
-      "11.22.33.44",
-      "",
-      "2017-09-16T08:58:31.091Z",
-      "11.22.33.44",
-      "http://demopage.io/teo_di_hoc.html",
-      "Title Demo",
-      "20",
-      "10",
-      "Register type demo",
-      "0917083096",
-      "sonpa@kogi.io"
+      ""
     )
 
     implicit val formats = DefaultFormats
     val msgJson = write(msgObj)
+
     while (true) {
       producer.send(new KeyedMessage[String, String](loadConfig.getTopics, msgJson.toString))
       println("Message send: " + msgJson)

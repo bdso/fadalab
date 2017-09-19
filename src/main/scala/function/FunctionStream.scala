@@ -1,7 +1,10 @@
 package function
 
 import java.time.LocalDateTime
+import java.util.UUID
 
+//import com.datastax.spark.connector.streaming._
+import com.datastax.spark.connector.streaming._
 import function.redis.RedisClient
 import kafka.serializer.StringDecoder
 import mapping.Object._
@@ -13,10 +16,23 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.elasticsearch.spark.streaming.EsSparkStreaming
 
-
 object FunctionStream {
 
   implicit val formats = DefaultFormats
+  val LOG: Logger = Logger.getLogger(this.getClass)
+
+  def getFpId(publicIp: String, userAgent: String): UUID = {
+    val s = publicIp + userAgent
+    val fpId = UUID.nameUUIDFromBytes(s.trim().getBytes())
+    fpId
+  }
+
+  //  def getFpId(publicIp: String, userAgent: String): String = {
+  //    val s = publicIp + userAgent
+  //    val fpId = UUID.nameUUIDFromBytes(s.trim().getBytes())
+  //    fpId.toString
+  //  }
+
 
   def application(conf: SparkConf, loadConfig: Settings) = {
 
@@ -31,14 +47,15 @@ object FunctionStream {
     val dStreamKafka = kafkaDirectStream(kafkaConfig)
     dStreamKafka.print()
 
-//    dStreamKafka.foreachRDD { rdd =>
-//      rdd.foreachPartition { partitionOfRecords =>
-        //        val connection = createNewConnection()
-        //        partitionOfRecords.foreach(record => connection.send(record))
-        //        connection.close()
-//      }
-//    }
-
+    val dStreamTmp: DStream[Click] = dStreamKafka.map(rdd => {
+      val fpId = getFpId(rdd.private_ip, rdd.user_agent)
+      val clicks = Click(rdd.id, rdd.click_id, rdd.product_id, rdd.timestamp, rdd.link_id, rdd.dns_ip, rdd.public_ip, rdd.private_ip,
+        rdd.referrer, rdd.user_agent, rdd.isp, rdd.country, rdd.city, rdd.language, rdd.os, rdd.browser, rdd.time_zone,
+        rdd.screen_size, rdd.fonts, rdd.http_params, rdd.campaign_id, rdd.channel_id, rdd.zone_id, rdd.utm_source,
+        rdd.utm_campaign, rdd.utm_medium, rdd.utm_term, rdd.network, rdd.future_params, fpId)
+      clicks
+    })
+    dStreamTmp.print()
     // Calculator msg.
     //    val dStream = dStreamKafka.map(x => (x.click_id, 1L)).reduceByKey(_ + _)
     //      .reduceByKeyAndWindow(_ + _, _ - _, Seconds(loadConfig.getWindowSize), Seconds(loadConfig.getSlidingInterval))
@@ -50,8 +67,10 @@ object FunctionStream {
     //    dStreamCassandra.print()
 
     // Store into Cassandra.
-    //    dStreamCassandra.saveToCassandra(loadConfig.getCassandraKeyspace, "ccu", SomeColumns("time", "keys", "counts"))
-    //    dStreamCassandra.print()
+    dStreamTmp.saveToCassandra(loadConfig.getCassandraKeyspace, "clicks")
+    dStreamTmp.print()
+    //        dStreamCassandra.saveToCassandra(loadConfig.getCassandraKeyspace, "ccu", SomeColumns("time", "keys", "counts"))
+    //        dStreamCassandra.print()
 
     /**
       * Start the computation.
@@ -110,8 +129,8 @@ object FunctionStream {
     val dStreamKafka = kafkaDirectStream(kafkaConfig)
 
     // Store into elasticsearch.
-//    val elasticConfig = ElasticStreamObj(loadConfigdConfig.getEsIndexName, loadConfig.getEsType, dStreamKafka)
-//    storeEsSparkStream(elasticConfig)
+    //    val elasticConfig = ElasticStreamObj(loadConfigdConfig.getEsIndexName, loadConfig.getEsType, dStreamKafka)
+    //    storeEsSparkStream(elasticConfig)
 
     /**
       * Start the computation.
