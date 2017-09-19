@@ -1,6 +1,8 @@
 package function
 
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 //import com.datastax.spark.connector.streaming._
@@ -27,11 +29,21 @@ object FunctionStream {
     fpId
   }
 
-  //  def getFpId(publicIp: String, userAgent: String): String = {
-  //    val s = publicIp + userAgent
-  //    val fpId = UUID.nameUUIDFromBytes(s.trim().getBytes())
-  //    fpId.toString
-  //  }
+  def conTimeStoreCassandra(date: String) = {
+    val fmt1 = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
+    val fmt2 = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val localDate = LocalDateTime.parse(date, fmt1)
+    val time = fmt2.format(localDate)
+    time
+  }
+
+  def comTimeActiveUser(date1: String, date2: String) = {
+    val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val localDate1 = LocalDateTime.parse(date1, fmt)
+    val localDate2 = LocalDateTime.parse(date2, fmt)
+    val days = ChronoUnit.DAYS.between(localDate1, localDate2)
+    days.toInt
+  }
 
 
   def application(conf: SparkConf, loadConfig: Settings) = {
@@ -47,30 +59,15 @@ object FunctionStream {
     val dStreamKafka = kafkaDirectStream(kafkaConfig)
     dStreamKafka.print()
 
-    val dStreamTmp: DStream[Click] = dStreamKafka.map(rdd => {
-      val fpId = getFpId(rdd.private_ip, rdd.user_agent)
-      val clicks = Click(rdd.id, rdd.click_id, rdd.product_id, rdd.timestamp, rdd.link_id, rdd.dns_ip, rdd.public_ip, rdd.private_ip,
-        rdd.referrer, rdd.user_agent, rdd.isp, rdd.country, rdd.city, rdd.language, rdd.os, rdd.browser, rdd.time_zone,
-        rdd.screen_size, rdd.fonts, rdd.http_params, rdd.campaign_id, rdd.channel_id, rdd.zone_id, rdd.utm_source,
-        rdd.utm_campaign, rdd.utm_medium, rdd.utm_term, rdd.network, rdd.future_params, fpId)
-      clicks
-    })
-    dStreamTmp.print()
-    // Calculator msg.
-    //    val dStream = dStreamKafka.map(x => (x.click_id, 1L)).reduceByKey(_ + _)
-    //      .reduceByKeyAndWindow(_ + _, _ - _, Seconds(loadConfig.getWindowSize), Seconds(loadConfig.getSlidingInterval))
-    //    dStream.print()
-
-    //    Store into redis.
-    //    storeRedisSparkStream(dStream)
-    //    val dStreamCassandra = dStream.map(x => (LocalDateTime.now.toString, x._1, x._2))
-    //    dStreamCassandra.print()
+    val dStreamClick: DStream[Click] = addFpId(dStreamKafka)
+    val dStreamActive: DStream[ActiveUser] = addActive(dStreamClick)
 
     // Store into Cassandra.
-    dStreamTmp.saveToCassandra(loadConfig.getCassandraKeyspace, "clicks")
-    dStreamTmp.print()
-    //        dStreamCassandra.saveToCassandra(loadConfig.getCassandraKeyspace, "ccu", SomeColumns("time", "keys", "counts"))
-    //        dStreamCassandra.print()
+    //    storeCassandraSparkStream(dStreamClick, loadConfig.getCassandraKeyspace, "raw_clicks")
+    //    dStreamClick.print()
+
+    storeCassandraSparkStream(dStreamActive, loadConfig.getCassandraKeyspace, "raw_clicks")
+    dStreamActive.print()
 
     /**
       * Start the computation.
@@ -166,7 +163,7 @@ object FunctionStream {
     EsSparkStreaming.saveToEs(dStream, indexType)
   }
 
-  def storeRedisSparkStream(dStream: DStream[(String, Long)]) = {
+  def storeRedisSparkStream(dStream: DStream[(String, Long)]): Unit = {
     dStream.foreachRDD(rdd => {
       rdd.foreachPartition(partitionOfRecords => {
         partitionOfRecords.foreach(pair => {
@@ -178,6 +175,103 @@ object FunctionStream {
           RedisClient.pool.returnResource(jedis)
         })
       })
+    })
+  }
+
+  def getActiveUserRedisSparkStream(fpId: String, timestamp: String): Int = {
+    var active = 0
+    val jedis = RedisClient.pool.getResource
+    jedis.select(RedisClient.dbIndex)
+    if (jedis.hexists(RedisClient.clickHashKey, fpId)) {
+      val timestampTmp = jedis.hget(RedisClient.clickHashKey, fpId)
+      active = comTimeActiveUser(timestampTmp, timestamp)
+    } else {
+      jedis.hset(RedisClient.clickHashKey, fpId, timestamp)
+    }
+    RedisClient.pool.returnResource(jedis)
+    active
+  }
+
+  //  def storeCassandraSparkStream(dStream: DStream[Click], keyspace: String, tableName: String) = {
+  def storeCassandraSparkStream(dStream: DStream[ActiveUser], keyspace: String, tableName: String) = {
+    dStream.saveToCassandra(keyspace, tableName)
+  }
+
+  def addFpId(dStream: DStream[ObjReceive]) = {
+    dStream.map(rdd => {
+      val fpId = getFpId(rdd.private_ip, rdd.user_agent)
+
+      //      val clicks = Click(UUID.fromString(rdd.id),
+      val clicks = Click(UUID.randomUUID(),
+        UUID.fromString(rdd.click_id),
+        UUID.fromString(rdd.product_id),
+        conTimeStoreCassandra(rdd.timestamp),
+        UUID.fromString(rdd.link_id),
+        rdd.dns_ip,
+        rdd.public_ip,
+        rdd.private_ip,
+        rdd.referrer,
+        rdd.user_agent,
+        rdd.isp,
+        rdd.country,
+        rdd.city,
+        rdd.language,
+        rdd.os,
+        rdd.browser,
+        rdd.time_zone,
+        rdd.screen_size,
+        rdd.fonts,
+        rdd.http_params,
+        UUID.fromString(rdd.campaign_id),
+        UUID.fromString(rdd.channel_id),
+        UUID.fromString(rdd.zone_id),
+        rdd.utm_source,
+        rdd.utm_campaign,
+        rdd.utm_medium,
+        rdd.utm_term,
+        rdd.network,
+        rdd.future_params,
+        fpId)
+      clicks
+    })
+  }
+
+  def addActive(dStream: DStream[Click]) = {
+    dStream.map(rdd => {
+      val active = getActiveUserRedisSparkStream(rdd.fp_id.toString, rdd.timestamp)
+      val activeUser = ActiveUser(rdd.id,
+        rdd.click_id,
+        rdd.product_id,
+        rdd.timestamp,
+        rdd.link_id,
+        rdd.dns_ip,
+        rdd.public_ip,
+        rdd.private_ip,
+        rdd.referrer,
+        rdd.user_agent,
+        rdd.isp,
+        rdd.country,
+        rdd.city,
+        rdd.language,
+        rdd.os,
+        rdd.browser,
+        rdd.time_zone,
+        rdd.screen_size,
+        rdd.fonts,
+        rdd.http_params,
+        rdd.campaign_id,
+        rdd.channel_id,
+        rdd.zone_id,
+        rdd.utm_source,
+        rdd.utm_campaign,
+        rdd.utm_medium,
+        rdd.utm_term,
+        rdd.network,
+        rdd.future_params,
+        rdd.fp_id,
+        active)
+
+      activeUser
     })
   }
 

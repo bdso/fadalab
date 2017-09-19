@@ -1,6 +1,7 @@
 package functiontest
 
 import java.io.File
+import java.time.LocalDateTime
 import java.util.{Properties, UUID}
 
 import com.typesafe.config.ConfigFactory
@@ -11,6 +12,7 @@ import mapping.Object.ObjReceive
 import net.liftweb.json.Serialization.write
 import net.liftweb.json._
 import org.apache.log4j.{Level, Logger}
+import org.joda.time.DateTime
 
 /**
   * Created by leo on 11/14/16.
@@ -49,7 +51,7 @@ object ProducerKafka {
       UUID.randomUUID().toString(),
       "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
       "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
-      "2017-01-10",
+      LocalDateTime.now().toString,
       "9921839c-0f0b-4266-ae04-f62c46c7b8c1",
       "8.8.8.8",
       "10.20.30.40",
